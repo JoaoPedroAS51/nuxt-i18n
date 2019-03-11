@@ -101,11 +101,20 @@ middleware['i18n'] = async ({ app, req, res, route, store, redirect, isHMR }) =>
     if (useCookie && (browserLocale = getCookie()) && browserLocale !== 1 && browserLocale !== '1') {
       // Get preferred language from cookie if present and enabled
       // Exclude 1 for backwards compatibility and fallback when fallbackLocale is empty
-    } else if (isSpa && typeof navigator !== 'undefined' && navigator.language) {
+    } else if (isSpa && typeof navigator !== 'undefined') {
       // Get browser language either from navigator if running in mode SPA, or from the headers
-      browserLocale = navigator.language.toLocaleLowerCase().substring(0, 2)
+      if (navigator.languages && navigator.languages.length) {
+        // latest versions of Chrome and Firefox set this correctly
+        browserLocale = navigator.languages[0]
+      } else if (navigator.userLanguage) {
+        // IE only
+        browserLocale = navigator.userLanguage
+      } else {
+        // latest versions of Chrome, Firefox, and Safari set this correctly
+        browserLocale = navigator.language
+      }
     } else if (req && typeof req.headers['accept-language'] !== 'undefined') {
-      browserLocale = req.headers['accept-language'].split(',')[0].toLocaleLowerCase().substring(0, 2)
+      browserLocale = req.headers['accept-language'].split(',')[0]
     }
 
     if (browserLocale) {
