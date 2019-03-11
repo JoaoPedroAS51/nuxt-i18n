@@ -37,8 +37,8 @@ middleware['i18n'] = async ({ app, req, res, route, store, redirect, isHMR }) =>
   const routeLocale = getLocaleFromRoute(route, routesNameSeparator, defaultLocaleRouteNameSuffix, locales)
 
   const getCookie = () => {
-    if (isSpa) {
-      return Cookies.get(cookieKey);
+    if (!process.server || isSpa) {
+      return Cookies.get(cookieKey)
     } else if (req && typeof req.headers.cookie !== 'undefined') {
       const cookies = req.headers && req.headers.cookie ? cookie.parse(req.headers.cookie) : {}
       return cookies[cookieKey]
@@ -48,12 +48,13 @@ middleware['i18n'] = async ({ app, req, res, route, store, redirect, isHMR }) =>
 
   const setCookie = (locale) => {
     const date = new Date()
-    if (isSpa) {
+    if (!process.server || isSpa) {
       Cookies.set(cookieKey, locale, {
         expires: new Date(date.setDate(date.getDate() + 365)),
         path: '/'
       })
     } else if (res) {
+      locale = Cookies.get(cookieKey) || locale
       const redirectCookie = cookie.serialize(cookieKey, locale, {
         expires: new Date(date.setDate(date.getDate() + 365)),
         path: '/'
