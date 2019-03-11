@@ -37,13 +37,12 @@ middleware['i18n'] = async ({ app, req, res, route, store, redirect, isHMR }) =>
   const routeLocale = getLocaleFromRoute(route, routesNameSeparator, defaultLocaleRouteNameSuffix, locales)
 
   const getCookie = () => {
-    if (!process.server || isSpa) {
-      return Cookies.get(cookieKey)
-    } else if (req && typeof req.headers.cookie !== 'undefined') {
+    if (process.server && req && typeof req.headers.cookie !== 'undefined') {
       const cookies = req.headers && req.headers.cookie ? cookie.parse(req.headers.cookie) : {}
       return cookies[cookieKey]
     }
-    return null
+
+    return Cookies.get(cookieKey) || null
   }
 
   const setCookie = (locale) => {
