@@ -53,7 +53,7 @@ middleware['i18n'] = async ({ app, req, res, route, store, redirect, isHMR }) =>
         path: '/'
       })
     } else if (res) {
-      locale = Cookies.get(cookieKey) || locale
+      locale = routeLocale ? locale : Cookies.get(cookieKey) || locale
       const redirectCookie = cookie.serialize(cookieKey, locale, {
         expires: new Date(date.setDate(date.getDate() + 365)),
         path: '/'
@@ -95,6 +95,33 @@ middleware['i18n'] = async ({ app, req, res, route, store, redirect, isHMR }) =>
     }
   }
 
+  if(routeLocale && locales.indexOf(routeLocale) !== -1) {
+    if(routeLocale !== app.i18n.locale) {
+      await switchLocale(routeLocale)
+    } else {
+      setCookie(routeLocale)
+    }
+  } else if(!routeLocale && !detectBrowserLanguage) {
+    const routeName = route && route.name ? app.getRouteBaseName(route) : 'index'
+    let cookieLocale
+    let redirectToLocale = fallbackLocale
+
+    // Use cookieLocale if we support it, otherwise use fallbackLocale
+    if(useCookie && (cookieLocale = getCookie()) && locales.indexOf(cookieLocale) !== -1) {
+      redirectToLocale = cookieLocale
+    }
+
+    if(redirectToLocale && locales.indexOf(redirectToLocale) !== -1) {
+
+      // We switch the locale before redirect to prevent loops
+      await switchLocale(redirectToLocale)
+
+      redirect(app.localePath(Object.assign({}, route , {
+        name: routeName
+      }), redirectToLocale))
+    }
+  }
+
   if (detectBrowserLanguage) {
     let browserLocale
 
@@ -118,8 +145,33 @@ middleware['i18n'] = async ({ app, req, res, route, store, redirect, isHMR }) =>
     }
 
     if (browserLocale) {
-      // Handle cookie option to prevent multiple redirections
-      if(!useCookie || alwaysRedirect || !getCookie()) {
+      if (!routeLocale) {
+        const routeName = route && route.name ? app.getRouteBaseName(route) : 'index'
+        let cookieLocale
+        let redirectToLocale = fallbackLocale
+
+        // Use browserLocale if we support it, otherwise use fallbackLocale
+        if(locales.indexOf(browserLocale) !== -1) {
+          redirectToLocale = browserLocale
+        }
+
+        // Use cookieLocale if we support it, otherwise use browserLocale
+        if(useCookie && (cookieLocale = getCookie()) && locales.indexOf(cookieLocale) !== -1) {
+          redirectToLocale = cookieLocale
+        }
+
+        if (redirectToLocale && locales.indexOf(redirectToLocale) !== -1) {
+
+          // We switch the locale before redirect to prevent loops
+          await switchLocale(redirectToLocale)
+
+          redirect(app.localePath(Object.assign({}, route , {
+            name: routeName
+          }), redirectToLocale))
+
+          return
+        }
+      } else if(!useCookie || alwaysRedirect || !getCookie()) {
         const routeName = route && route.name ? app.getRouteBaseName(route) : 'index'
         let redirectToLocale = fallbackLocale
 
