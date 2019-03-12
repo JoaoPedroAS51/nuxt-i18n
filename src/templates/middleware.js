@@ -102,7 +102,8 @@ middleware['i18n'] = async ({ app, req, res, route, store, redirect, isHMR }) =>
       setCookie(routeLocale)
     }
   } else if(!routeLocale && !detectBrowserLanguage) {
-    const routeName = route && route.name ? app.getRouteBaseName(route) : 'index'
+    let routeName = route && route.name ? app.getRouteBaseName(route) : null
+    let routePath = route ? route.fullPath : null
     let cookieLocale
     let redirectToLocale = fallbackLocale
 
@@ -116,9 +117,22 @@ middleware['i18n'] = async ({ app, req, res, route, store, redirect, isHMR }) =>
       // We switch the locale before redirect to prevent loops
       await switchLocale(redirectToLocale)
 
-      redirect(app.localePath(Object.assign({}, route , {
-        name: routeName
-      }), redirectToLocale))
+      if(routeName) {
+        // Get path using routeName, if we've found it
+        routePath = app.localePath(Object.assign({}, route , {
+          name: routeName
+        }), redirectToLocale)
+      } else if (!routeName && routePath && routePath !== '/') {
+        // Or create a new path adding locale at the start of the route full path: /{locale}/full/path/to/route
+        routePath = `/${redirectToLocale}${routePath}`;
+      } else {
+        // Otherwise get fallback route using routeName "index"
+        routePath = app.localePath(Object.assign({}, route , {
+          name: 'index'
+        }), redirectToLocale)
+      }
+
+      redirect(routePath)
     }
   }
 
@@ -146,7 +160,8 @@ middleware['i18n'] = async ({ app, req, res, route, store, redirect, isHMR }) =>
 
     if (browserLocale) {
       if (!routeLocale) {
-        const routeName = route && route.name ? app.getRouteBaseName(route) : 'index'
+        let routeName = route && route.name ? app.getRouteBaseName(route) : null
+        let routePath = route ? route.fullPath : null
         let cookieLocale
         let redirectToLocale = fallbackLocale
 
@@ -165,14 +180,28 @@ middleware['i18n'] = async ({ app, req, res, route, store, redirect, isHMR }) =>
           // We switch the locale before redirect to prevent loops
           await switchLocale(redirectToLocale)
 
-          redirect(app.localePath(Object.assign({}, route , {
-            name: routeName
-          }), redirectToLocale))
+          if(routeName) {
+            // Get path using routeName, if we've found it
+            routePath = app.localePath(Object.assign({}, route , {
+              name: routeName
+            }), redirectToLocale)
+          } else if (!routeName && routePath && routePath !== '/') {
+            // Or create a new path adding locale at the start of the route full path: /{locale}/full/path/to/route
+            routePath = `/${redirectToLocale}${routePath}`;
+          } else {
+            // Otherwise get fallback route using routeName "index"
+            routePath = app.localePath(Object.assign({}, route , {
+              name: 'index'
+            }), redirectToLocale)
+          }
+
+          redirect(routePath)
 
           return
         }
       } else if(!useCookie || alwaysRedirect || !getCookie()) {
-        const routeName = route && route.name ? app.getRouteBaseName(route) : 'index'
+        let routeName = route && route.name ? app.getRouteBaseName(route) : null
+        let routePath = route ? route.fullPath : null
         let redirectToLocale = fallbackLocale
 
         // Use browserLocale if we support it, otherwise use fallbackLocale
@@ -185,9 +214,22 @@ middleware['i18n'] = async ({ app, req, res, route, store, redirect, isHMR }) =>
           // We switch the locale before redirect to prevent loops
           await switchLocale(redirectToLocale)
 
-          redirect(app.localePath(Object.assign({}, route , {
-            name: routeName
-          }), redirectToLocale))
+          if(routeName) {
+            // Get path using routeName, if we've found it
+            routePath = app.localePath(Object.assign({}, route , {
+              name: routeName
+            }), redirectToLocale)
+          } else if (!routeName && routePath && routePath !== '/') {
+            // Or create a new path adding locale at the start of the route full path: /{locale}/full/path/to/route
+            routePath = `/${redirectToLocale}${routePath}`;
+          } else {
+            // Otherwise get fallback route using routeName "index"
+            routePath = app.localePath(Object.assign({}, route , {
+              name: 'index'
+            }), redirectToLocale)
+          }
+
+          redirect(routePath)
 
           return
         }
